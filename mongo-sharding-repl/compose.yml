@@ -1,11 +1,10 @@
-name: temp
+name: mongo-sharding-repl
 
 services:
 
     mongod_config_server:
         image: dh-mirror.gitverse.ru/mongo:latest
         restart: always
-        container_name: mongod_config_server
         volumes:
             - mongod_config_server:/data/db
         expose:
@@ -26,14 +25,13 @@ services:
     mongos_router:
         image: dh-mirror.gitverse.ru/mongo:latest
         restart: always
-        container_name: mongos_router
         volumes:
             - mongos_router:/data/db
         expose:
             - "27020"
         command: [
             "mongos",
-            "--configdb", 
+            "--configdb",
             "mongod_config_server/mongod_config_server:27017",
             "--bind_ip_all",
             "--port",
@@ -47,7 +45,6 @@ services:
     mongod_rs0_0:
         image: dh-mirror.gitverse.ru/mongo:latest
         restart: always
-        container_name: mongod_rs0_0
         volumes:
             - mongod_rs0_0:/data/db
         expose:
@@ -68,7 +65,6 @@ services:
     mongod_rs0_1:
         image: dh-mirror.gitverse.ru/mongo:latest
         restart: always
-        container_name: mongod_rs0_1
         volumes:
             - mongod_rs0_1:/data/db
         expose:
@@ -89,7 +85,6 @@ services:
     mongod_rs0_2:
         image: dh-mirror.gitverse.ru/mongo:latest
         restart: always
-        container_name: mongod_rs0_2
         volumes:
             - mongod_rs0_2:/data/db
         expose:
@@ -110,7 +105,6 @@ services:
     mongod_rs1_0:
         image: dh-mirror.gitverse.ru/mongo:latest
         restart: always
-        container_name: mongod_rs1_0
         volumes:
             - mongod_rs1_0:/data/db
         expose:
@@ -131,7 +125,6 @@ services:
     mongod_rs1_1:
         image: dh-mirror.gitverse.ru/mongo:latest
         restart: always
-        container_name: mongod_rs1_1
         volumes:
             - mongod_rs1_1:/data/db
         expose:
@@ -152,7 +145,6 @@ services:
     mongod_rs1_2:
         image: dh-mirror.gitverse.ru/mongo:latest
         restart: always
-        container_name: mongod_rs1_2
         volumes:
             - mongod_rs1_2:/data/db
         expose:
@@ -171,25 +163,24 @@ services:
             start_period: 10s
 
     pymongo_api:
-        container_name: pymongo_api
-        build: 
+        build:
             context: api_app
             dockerfile: Dockerfile
-        image: kazhem/pymongo_api:1.0.0
         depends_on:
-            -   redis
+           - mongod_config_server
+           - mongos_router
+           - mongod_rs0_0
+           - mongod_rs0_1
+           - mongod_rs0_2
+           - mongod_rs1_0
+           - mongod_rs1_1
+           - mongod_rs1_2
+        image: kazhem/pymongo_api:1.0.0
         ports:
           - 8080:8080
         environment:
             MONGODB_URL: "mongodb://mongos_router:27020"
             MONGODB_DATABASE_NAME: "somedb"
-            REDIS_URL: "redis://redis:6379"
-
-    redis:
-        container_name: redis
-        image: redis:latest
-        ports:
-          - "6379:6379"
 
 volumes:
    mongod_config_server:
